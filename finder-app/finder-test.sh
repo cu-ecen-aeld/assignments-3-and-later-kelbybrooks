@@ -53,21 +53,22 @@ fi
 #make
 
 
-# BYPASS PREVIOUS TEST TO CREATE DIRECTORY
-mkdir -p "$WRITEDIR"
-if [ -d "$WRITEDIR" ]
-then
-	echo "$WRITEDIR created"
-else
-	exit 1
-fi
+# # BYPASS PREVIOUS TEST TO CREATE DIRECTORY
+# mkdir -p "$WRITEDIR"
+# if [ -d "$WRITEDIR" ]
+# then
+# 	echo "$WRITEDIR created"
+# else
+# 	exit 1
+# fi
 
-
+make clean
+make
 
 
 for i in $( seq 1 $NUMFILES)
 do
-	./writer.sh "$WRITEDIR/${username}$i.txt" "$WRITESTR"
+	./writer "$WRITEDIR/${username}$i.txt" "$WRITESTR"
 done
 
 OUTPUTSTRING=$(./finder.sh "$WRITEDIR" "$WRITESTR")
