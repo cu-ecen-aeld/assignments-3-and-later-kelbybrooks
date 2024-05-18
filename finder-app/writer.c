@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    fd = open(writefile, O_RDWR | O_CREAT);
+    fd = open(writefile, O_RDWR | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
     if(fd == -1)
     {
         printf("Error opening file\n");

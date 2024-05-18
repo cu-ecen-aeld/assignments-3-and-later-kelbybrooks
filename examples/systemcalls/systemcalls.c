@@ -16,7 +16,11 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
+    int ret;
 
+    ret = system(cmd);
+    if(ret == - -1)
+        return false;
     return true;
 }
 
@@ -37,9 +41,11 @@ bool do_system(const char *cmd)
 bool do_exec(int count, ...)
 {
     va_list args;
+    pid_t pid;
+    // vaftg_start(args, count);
     va_start(args, count);
     char * command[count+1];
-    int i;
+    int i, status;
     for(i=0; i<count; i++)
     {
         command[i] = va_arg(args, char *);
@@ -58,10 +64,46 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+    //Create child process
+    pid = fork();
+    if(pid == -1)
+    {
+        perror("fork");
+    }
+
+    
+    if(pid == 0)    //Within child process
+    {
+        int ret;
+
+        //execute command in child process
+        ret = execv(command[0], command);
+        if(ret == -1)
+        {
+            perror("execv");
+            exit(EXIT_FAILURE);
+        }
+        else
+            exit(EXIT_SUCCESS);
+    }
+
+    //wait for child process to terminate
+    pid = waitpid(pid, &status, 0);
+    if(pid == -1)
+        return false;
+
+    
+    if(WIFEXITED(status))   //Upon normal termination
+    {
+        int ret = WEXITSTATUS(status);  //Get exit value
+        if(ret == 1)
+            return false;
+        return true;
+    }   
+
 
     va_end(args);
-
-    return true;
+    return false;
 }
 
 /**
@@ -85,6 +127,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     command[count] = command[count];
 
 
+
 /*
  * TODO
  *   Call execv, but first using https://stackoverflow.com/a/13784315/1446624 as a refernce,
@@ -92,8 +135,70 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *
 */
+int status;
+pid_t pid;
+
+ pid = fork();
+    if(pid == -1)
+    {
+        perror("fork");
+    }
+
+    if(pid == 0)
+    {
+        int ret, fd;
+
+        //Open file to be redirected to
+        fd = open("testfile.txt", O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IROTH);
+        if(fd < 0)
+        {
+            perror("open");
+            abort();
+        }
+
+        /*
+            Redirects 'stdout' to our created file descriptor such that subsequent calls will be
+            redirected to 'fd'
+        */
+        ret = dup2(fd, STDOUT_FILENO);
+
+        if(ret < 0)
+        {
+            perror("dup2");
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            close(fd);
+
+            //Proceed as in do_exec function
+            ret = execv(command[0], command);
+            if(ret == -1)
+            {
+                perror("execv");
+                exit(EXIT_FAILURE);
+            }
+            else
+                exit(EXIT_SUCCESS);
+        }
+    }
+
+        //execute command in child process
+        // ret = execv(command[0], command);
+
+    //wait for child process to terminate
+    pid = waitpid(pid, &status, 0);
+    if(pid == -1)
+        abort();
+    if(WIFEXITED(status))   
+    {
+        int ret = WEXITSTATUS(status);  //Exit value from child process
+        if(ret == 1)
+            return false;
+        return true;
+    }   
+
 
     va_end(args);
-
-    return true;
+    return false;
 }
