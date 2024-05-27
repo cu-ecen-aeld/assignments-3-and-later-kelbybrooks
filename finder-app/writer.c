@@ -9,11 +9,7 @@ int main(int argc, char *argv[])
 {
     char *writefile = argv[1];
     char *writestr = argv[2];
-    int fd;
 
-    size_t count;
-    ssize_t nr;
-     
     openlog("Assignment 2", LOG_PID, LOG_USER);
     syslog(LOG_DEBUG, "Writing %s to %s", writestr, writefile);
 
@@ -22,36 +18,26 @@ int main(int argc, char *argv[])
     {
         printf("Insufficient commands\n");
         syslog(LOG_ERR, "Insufficient commands");
+	closelog();
         return 1;
     }
-
-    fd = open(writefile, O_RDWR | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
-    if(fd == -1)
+	
+    
+    FILE *file = fopen(writefile, "w");
+    if(file == NULL)
     {
         printf("Error opening file\n");
         syslog(LOG_ERR, "Error opening file");
+	return 1;
     }
 
-    
-    count = strlen(writestr);
-    nr = write(fd, writestr, strlen(writestr));
+    fprintf(file, "%s", writestr);
+    syslog(LOG_DEBUG, "Writing %s to %s", writestr, writefile);
 
-    if(nr == -1)
-    {
-        printf("Error writing to file\n");
-        syslog(LOG_ERR, "Error writing to file");
-    }
-    else if(count != nr)
-    {
-        printf("Incomplete write to file.\n");
-        syslog(LOG_ERR, "Incomplete write to file.");
+    fclose(file);    
+    closelog();
         
-    }
-    close(fd);
     
-
-
-
     return 0;
     
 
